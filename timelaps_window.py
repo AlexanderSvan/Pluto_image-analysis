@@ -3,7 +3,7 @@ from PySide2.QtGui import QPixmap, QKeySequence
 from PySide2.QtWidgets import (QHBoxLayout, QLabel, QPushButton, QFileDialog,
                                QWidget, QVBoxLayout, QShortcut, QSlider, QComboBox)
 
-import qimage2ndarray
+from qimage2ndarray import array2qimage
 import imutils
 import numpy as np
 import cv2
@@ -14,14 +14,13 @@ class timelaps(QWidget):
    def __init__(self, parentData, series):
       QWidget.__init__(self)
       self.data=parentData
-      self.frame=series
-      self.max=np.amax([np.amax(img) for img in self.frame])
-      self.min=np.amin([np.amin(img) for img in self.frame])
+      self.max=np.amax([np.amax(img) for img in self.data.image])
+      self.min=np.amin([np.amin(img) for img in self.data.image])
       self.setup_ui()
       self.shortcuts()
       # self.setFixedSize(500, 500)
-      self.set_img(self.frame[0])
-      self.canvas=self.frame[0]
+      self.set_img(self.data.image[0])
+      self.canvas=self.data.image[0]
       self.drawing=np.zeros_like(imutils.resize(self.canvas, width=500, height=500))
       self.points=[]
       self.setWindowTitle('Image window Field {}'.format(self.data.field_name[self.data.field]))
@@ -34,8 +33,6 @@ class timelaps(QWidget):
       self.quit.activated.connect(self.close)
 
    def setup_ui(self):
-      """Initialize widgets.
-      """
       layout=QVBoxLayout()
       well=QHBoxLayout()
       prev_button=QPushButton('Previous Field')
@@ -62,7 +59,7 @@ class timelaps(QWidget):
       self.slider.setTickPosition(QSlider.TicksBelow)
       self.slider.setTickInterval(10)
       self.slider.setMinimum(0)
-      self.slider.setMaximum(self.frame.sizes['t']-1)
+      self.slider.setMaximum(self.data.image.sizes['t']-1)
       self.slider.valueChanged.connect(self.changedValue) 
       controls.addWidget(self.slider)
       layout.addLayout(well)
@@ -77,44 +74,9 @@ class timelaps(QWidget):
          lmax = float(self.max)
          return np.floor((f-lmin)/(lmax-lmin)*255.)
       
-      if self.data.show_annot ==True:
-         self.canvas=normalize(imutils.resize(self.canvas, width=500, height=500))
-         self.drawing=normalize(imutils.resize(self.drawing, width=500, height=500))
-         # if len(self.points)>1:
-         #     x1,y1=self.points[-2]
-         #     x,y=self.points[-1]
-         #     cv2.line(self.canvas, (x1,y1),(x,y),color=(255,255,255),thickness=5)
+      frame=normalize(imutils.resize(frame, width=500, height=500))
+      self.image_label.setPixmap(QPixmap.fromImage(array2qimage(frame)))
          
-         
-         for stroke in self.points:
-            prev=[]
-            # for coords in stroke:
-            #    if prev!=[]:
-            #       x1,y1=prev
-            #       x,y=coords
-            #       cv2.line(self.canvas, (x1,y1),(x,y),color=(255,255,255),thickness=5)
-            #       cv2.line(self.drawing, (x1,y1),(x,y),color=(255,255,255),thickness=5)
-            #    else:
-            #       pass
-            #    prev=coords
-               
-            
-            for coords in self.points:
-                x,y=coords
-                cv2.circle(self.canvas, (int(x), int(y)), int(10), (255, 255, 255), 2)
-                cv2.drawMarker(self.canvas,  (int(x), int(y)), (255,255,255), markerType=cv2.MARKER_CROSS, markerSize=30, thickness=2)
-         image = qimage2ndarray.array2qimage(self.canvas)
-         self.image_label.setPixmap(QPixmap.fromImage(image))
-
-      else:
-         frame=normalize(imutils.resize(frame, width=500, height=500))
-         image = qimage2ndarray.array2qimage(frame)
-         self.image_label.setPixmap(QPixmap.fromImage(image))
-         
-  
-   def changedValue(self):
-      self.canvas=self.data.image[self.slider.value()]
-      self.set_img(self.frame[self.slider.value()])
   
    def eventFilter(self, obj, event):
              
@@ -127,28 +89,17 @@ class timelaps(QWidget):
             self.points.append((event.pos().x(),event.pos().y()))
             print(str((event.pos().x(),event.pos().y())))
             if self.data.show_annot:
-               self.set_img(self.frame[self.slider.value()])
+               self.set_img(self.data.image[self.slider.value()])
    
       elif self.data.pointer=='brush' and event.type() == QEvent.MouseMove:
          if obj is self.image_label:
-            self.points[-1].append((event.pos().x(),event.pos().y()))
+            self.points.append((event.pos().x(),event.pos().y()))
             if self.data.show_annot:
-               self.set_img(self.frame[self.slider.value()])
-      
-      # elif self.data.pointer=='brush' and event.type() == QEvent.MouseButtonRelease:         
-      #    if obj is self.image_label:
-      #       if self.stroke:
-      #          self.points.append(self.stroke)
-      #          self.stroke=None
-      #          print('test')
+               self.set_img(self.data.image[self.slider.value()])
 
       elif self.data.pointer=='brush' and event.type() == QEvent.MouseButtonPress:         
          if obj is self.image_label:
             self.points.append([])
-            
-   """
-   currently the drawing function dows not draw from the 
-   """
            
    def save_roi(self,name):
       field='field {}'.format(self.data.field)
@@ -161,38 +112,39 @@ class timelaps(QWidget):
          self.clear()
    
    def toggel_annot(self):
-      self.set_img(self.frame[self.slider.value()])
+      self.set_img(self.data.image[self.slider.value()])
       
    def clear(self):
-      self.canvas=self.frame[self.slider.value()]
-      self.drawing=np.zeros_like(self.frame[self.slider.value()])
+      self.canvas=self.data.image[self.slider.value()]
+      self.drawing=np.zeros_like(self.data.image[self.slider.value()])
       self.points=[]
-      self.set_img(self.frame[self.slider.value()])
+      self.set_img(self.data.image[self.slider.value()])
+      
+   def changedValue(self):
+      self.canvas=self.data.image[self.slider.value()]
+      self.set_img(self.data.image[self.slider.value()])
       
    def next_field(self):
       if self.data.field+1 < self.data.image.sizes['v']:
          self.data.field=self.data.field+1
          self.data.image.default_coords['v']=self.data.field
-         self.frame=self.data.image
          self.canvas=self.data.image[self.slider.value()]
-         self.set_img(self.frame[self.slider.value()])
+         self.set_img(self.data.image[self.slider.value()])
          self.setWindowTitle('Image window Field {}'.format(self.data.field_name[self.data.field]))
       
    def prev_field(self):
       if self.data.field-1 >=0:
          self.data.field=self.data.field-1
          self.data.image.default_coords['v']=self.data.field
-         self.frame=self.data.image
          self.canvas=self.data.image[self.slider.value()]
-         self.set_img(self.frame[self.slider.value()])
+         self.set_img(self.image[self.slider.value()])
          self.setWindowTitle('Image window Field {}'.format(self.data.field_name[self.data.field]))
          
    def go_to_well(self):
          self.data.field=self.well_LUT[self.idx.currentText()]
          self.data.image.default_coords['v']=self.data.field
-         self.frame=self.data.image
          self.canvas=self.data.image[self.slider.value()]
-         self.set_img(self.frame[self.slider.value()])
+         self.set_img(self.data.image[self.slider.value()])
          self.setWindowTitle('Image window Field {}'.format(self.data.field_name[self.data.field]))
          
    def save(self):
@@ -200,5 +152,5 @@ class timelaps(QWidget):
        ext=ext[ext.find("(")+1:ext.find(")")].strip("*")
        if not path[-len(ext):]==ext:
           path=path+ext
-       plt.imsave(path, self.frame[self.slider.value()], cmap='gray')
+       plt.imsave(path, self.data.image[self.slider.value()], cmap='gray')
    

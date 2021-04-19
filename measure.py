@@ -35,13 +35,17 @@ class measure_wid(QWidget):
       
       length=self.data.image.sizes['t']
       ints={}
-      for key in self.data.roi.keys():
-         ints[key]={}
-         for i,img in enumerate(self.data.image):
-            img=normalize(imutils.resize(img, width=500, height=500))
-            ints[key][i]=np.mean(img[self.data.roi[key]==255])
-            print(key,":",i,"/",length)
+      for field in self.data.roi.keys():
+          
+         ints[field]={}
+         for roi in self.data.roi[field].keys():
+             ints[field][roi]={}
+             for i,img in enumerate(self.data.image):
+                img=normalize(imutils.resize(img, width=500, height=500))
+                ints[field][roi][i]=np.mean(img[self.data.roi[field][roi]==255])
+                print(roi,":",i,"/",length)
       self.data.results=ints
+      print(ints)
       print(self.data.roi)
       print('finished')
 
