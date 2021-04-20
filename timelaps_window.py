@@ -116,11 +116,11 @@ class timelaps(QWidget):
    def save_roi(self,name):
       field='field {}'.format(self.data.field)
       if field in self.data.roi:
-         self.data.roi[field][name]=self.drawing
+         self.data.roi[field][name]=self.points
          self.clear()
       else:
          self.data.roi[field]={}
-         self.data.roi[field][name]=self.ing
+         self.data.roi[field][name]=self.points
          self.clear()
    
    def toggel_annot(self):
@@ -153,7 +153,7 @@ class timelaps(QWidget):
          self.max=np.amax([np.amax(img) for img in self.data.image])
          self.min=np.amin([np.amin(img) for img in self.data.image])
          self.canvas=self.data.image[self.slider.value()]
-         self.set_img(self.image[self.slider.value()])
+         self.set_img(self.data.image[self.slider.value()])
          self.setWindowTitle('Image window Field {}'.format(self.data.field_name[self.data.field]))
          
    def go_to_well(self):

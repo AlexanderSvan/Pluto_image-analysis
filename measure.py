@@ -4,6 +4,8 @@ from PySide2.QtWidgets import (QApplication, QPushButton, QWidget,
 import sys
 import numpy as np
 import imutils 
+from skimage.morphology import convex_hull_image
+import json
 
 class measure_wid(QWidget):
  
@@ -32,21 +34,32 @@ class measure_wid(QWidget):
          lmin = float(f.min())
          lmax = float(f.max())
          return np.floor((f-lmin)/(lmax-lmin)*255.)
+     
+      def get_mask(points, img):
+         mask=np.zeros_like(img)
+         print(points)
+         for point in points:
+            mask[point[1],point[0]]=1
+         return convex_hull_image(mask)
       
       length=self.data.image.sizes['t']
       ints={}
       for field in self.data.roi.keys():
-          
-         ints[field]={}
+         self.data.image.default_coords['v']=int(field.split(' ')[1])
+         well_name=self.data.field_name[int(field.split(' ')[1])]
+
          for roi in self.data.roi[field].keys():
-             ints[field][roi]={}
+             ints[well_name+'_'+roi]={}
+             mask=get_mask(self.data.roi[field][roi], self.data.image[0])
              for i,img in enumerate(self.data.image):
-                img=normalize(imutils.resize(img, width=500, height=500))
-                ints[field][roi][i]=np.mean(img[self.data.roi[field][roi]==255])
+                img=imutils.resize(img, width=512, height=512)
+                ints[well_name+'_'+roi][i]=np.mean(img[mask==1])
                 print(roi,":",i,"/",length)
+
+      cb = QApplication.clipboard()
+      cb.clear(mode=cb.Clipboard )
+      cb.setText(json.dumps(ints)   , mode=cb.Clipboard)
       self.data.results=ints
-      print(ints)
-      print(self.data.roi)
       print('finished')
 
 if __name__ == "__main__":
