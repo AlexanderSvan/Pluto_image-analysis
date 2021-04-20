@@ -1,11 +1,12 @@
 from PySide2.QtGui import QKeySequence
 from PySide2.QtWidgets import (QApplication, QPushButton, QWidget, 
-                               QVBoxLayout, QShortcut)
+                               QVBoxLayout, QShortcut,QFileDialog)
 import sys
 import numpy as np
 import imutils 
 from skimage.morphology import convex_hull_image
 import json
+import pandas as pd
 
 class measure_wid(QWidget):
  
@@ -56,10 +57,12 @@ class measure_wid(QWidget):
                 ints[well_name+'_'+roi][i]=np.mean(img[mask==1])
                 print(roi,":",i,"/",length)
 
-      cb = QApplication.clipboard()
-      cb.clear(mode=cb.Clipboard )
-      cb.setText(json.dumps(ints)   , mode=cb.Clipboard)
-      self.data.results=ints
+      # cb = QApplication.clipboard()
+      # cb.clear(mode=cb.Clipboard )
+      # cb.setText(json.dumps(ints)   , mode=cb.Clipboard)
+      name = QFileDialog.getSaveFileName(self, 'Save File','',"Excel (*.xlsx)")
+      df=pd.DataFrame.from_dict(ints, orient='index')
+      df.to_excel(name[0])
       print('finished')
 
 if __name__ == "__main__":
