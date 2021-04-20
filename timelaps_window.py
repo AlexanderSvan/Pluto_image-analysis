@@ -18,11 +18,12 @@ class timelaps(QWidget):
       self.min=np.amin([np.amin(img) for img in self.data.image])
       self.setup_ui()
       self.shortcuts()
+      self.points=[]
       # self.setFixedSize(500, 500)
       self.set_img(self.data.image[0])
       self.canvas=self.data.image[0]
-      self.drawing=np.zeros_like(imutils.resize(self.canvas, width=500, height=500))
-      self.points=[]
+      self.drawing=np.zeros_like(imutils.resize(self.canvas, width=512, height=512))
+
       self.setWindowTitle('Image window Field {}'.format(self.data.field_name[self.data.field]))
       self.data.annot_signal.connect(self.toggel_annot)
       self.data.clear_signal.connect(self.clear)
@@ -73,9 +74,19 @@ class timelaps(QWidget):
          lmin = float(self.min)
          lmax = float(self.max)
          return np.floor((f-lmin)/(lmax-lmin)*255.)
+     
+      if self.data.show_annot ==True:
+          self.canvas=normalize(imutils.resize(frame, width=512, height=512))
+          for coords in self.points:
+             x,y=coords
+             # cv2.circle(self.canvas, (int(x), int(y)), int(10), (255, 255, 255), 2)
+             cv2.drawMarker(self.canvas,  (int(x), int(y)), (255,255,255), markerType=cv2.MARKER_CROSS, markerSize=10, thickness=2)
+          
+          self.image_label.setPixmap(QPixmap.fromImage(array2qimage(self.canvas)))
       
-      frame=normalize(imutils.resize(frame, width=500, height=500))
-      self.image_label.setPixmap(QPixmap.fromImage(array2qimage(frame)))
+      else:
+          frame=normalize(imutils.resize(frame, width=512, height=512))
+          self.image_label.setPixmap(QPixmap.fromImage(array2qimage(frame)))
          
   
    def eventFilter(self, obj, event):
@@ -88,6 +99,7 @@ class timelaps(QWidget):
          if obj is self.image_label and event.type() == QEvent.MouseButtonPress:
             self.points.append((event.pos().x(),event.pos().y()))
             print(str((event.pos().x(),event.pos().y())))
+            print(self.points)
             if self.data.show_annot:
                self.set_img(self.data.image[self.slider.value()])
    
@@ -108,7 +120,7 @@ class timelaps(QWidget):
          self.clear()
       else:
          self.data.roi[field]={}
-         self.data.roi[field][name]=self.drawing
+         self.data.roi[field][name]=self.ing
          self.clear()
    
    def toggel_annot(self):
@@ -121,13 +133,15 @@ class timelaps(QWidget):
       self.set_img(self.data.image[self.slider.value()])
       
    def changedValue(self):
-      self.canvas=self.data.image[self.slider.value()]
+      # self.canvas=self.data.image[self.slider.value()]
       self.set_img(self.data.image[self.slider.value()])
       
    def next_field(self):
       if self.data.field+1 < self.data.image.sizes['v']:
          self.data.field=self.data.field+1
          self.data.image.default_coords['v']=self.data.field
+         self.max=np.amax([np.amax(img) for img in self.data.image])
+         self.min=np.amin([np.amin(img) for img in self.data.image])
          self.canvas=self.data.image[self.slider.value()]
          self.set_img(self.data.image[self.slider.value()])
          self.setWindowTitle('Image window Field {}'.format(self.data.field_name[self.data.field]))
@@ -136,6 +150,8 @@ class timelaps(QWidget):
       if self.data.field-1 >=0:
          self.data.field=self.data.field-1
          self.data.image.default_coords['v']=self.data.field
+         self.max=np.amax([np.amax(img) for img in self.data.image])
+         self.min=np.amin([np.amin(img) for img in self.data.image])
          self.canvas=self.data.image[self.slider.value()]
          self.set_img(self.image[self.slider.value()])
          self.setWindowTitle('Image window Field {}'.format(self.data.field_name[self.data.field]))
@@ -143,6 +159,8 @@ class timelaps(QWidget):
    def go_to_well(self):
          self.data.field=self.well_LUT[self.idx.currentText()]
          self.data.image.default_coords['v']=self.data.field
+         self.max=np.amax([np.amax(img) for img in self.data.image])
+         self.min=np.amin([np.amin(img) for img in self.data.image])
          self.canvas=self.data.image[self.slider.value()]
          self.set_img(self.data.image[self.slider.value()])
          self.setWindowTitle('Image window Field {}'.format(self.data.field_name[self.data.field]))
