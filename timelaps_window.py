@@ -7,7 +7,7 @@ from qimage2ndarray import array2qimage
 import imutils
 import numpy as np
 import cv2
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 class timelaps(QWidget):
        
@@ -166,9 +166,10 @@ class timelaps(QWidget):
          self.setWindowTitle('Image window Field {}'.format(self.data.field_name[self.data.field]))
          
    def save(self):
-       path, ext = QFileDialog.getSaveFileName(self, 'Save File',filter="JPEG (*.jpg);;TIFF (*.tif);;PNG (*.png)")
-       ext=ext[ext.find("(")+1:ext.find(")")].strip("*")
-       if not path[-len(ext):]==ext:
-          path=path+ext
-       plt.imsave(path, self.data.image[self.slider.value()], cmap='gray')
+         pass
+        # path, ext = QFileDialog.getSaveFileName(self, 'Save File',filter="JPEG (*.jpg);;TIFF (*.tif);;PNG (*.png)")
+        # ext=ext[ext.find("(")+1:ext.find(")")].strip("*")
+        # if not path[-len(ext):]==ext:
+        #    path=path+ext
+        # plt.imsave(path, self.data.image[self.slider.value()], cmap='gray')
    

@@ -7,7 +7,7 @@ from PySide2.QtWidgets import (QAction, QApplication, QHeaderView, QHBoxLayout, 
 import sys
 import imutils
 import numpy as np
-from calculations import intensity_timeline
+# from calculations import intensity_timeline
 
 class int_tracker(QWidget):
    
@@ -116,8 +116,8 @@ class int_tracker(QWidget):
    #                print(field+" :"+str(i)+"/"+str(length))           
    #    self.data.results=ints
    #    print('finished')      
-   def analyse(self): 
-      self.data.results=intensity_timeline(self.data.image,self.data.roi)
+   # def analyse(self): 
+   #    self.data.results=intensity_timeline(self.data.image,self.data.roi)
 
 
 if __name__ == "__main__":
